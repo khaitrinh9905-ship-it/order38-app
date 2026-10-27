@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級午餐訂餐系統</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 24px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        /* 菜單列表樣式 */
+        ul.menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul.menu-list li {
+            padding: 8px 12px;
+            background: #f1f5f9;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+        }
+
+        /* 表單樣式 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f1f5f9;
+        }
+
+        .summary-info {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .error-msg {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏫 班級午餐訂餐系統</h1>
+
+    <div class="grid">
+        <!-- 左側：菜單管理與訂餐登記 -->
+        <div>
+            <div class="card">
+                <h2>1. 今日菜單</h2>
+                <ul id="menuList" class="menu-list">
+                    <!-- 動態載入菜單 -->
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>2. 訂餐登記</h2>
+                <form id="orderForm" onsubmit="handleOrder(event)">
+                    <div class="form-group">
+                        <label for="seatNo">座號 (1 ~ 50，輸入 0 結束登記並結算)：</label>
+                        <input type="number" id="seatNo" min="0" max="50" placeholder="例如：15 (輸入 0 結束)" required>
+                        <div id="seatError" class="error-msg">請輸入有效座號 (1-50 或 0)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="itemNo">餐點編號 (1 ~ 5)：</label>
+                        <select id="itemNo" required>
+                            <option value="" disabled selected>-- 請選擇餐點編號 --</option>
+                            <option value="1">1. 排骨便當 ($80)</option>
+                            <option value="2">2. 雞腿便當 ($85)</option>
+                            <option value="3">3. 素食便當 ($70)</option>
+                            <option value="4">4. 滷肉飯 ($55)</option>
+                            <option value="5">5. 貢丸湯 ($20)</option>
+                        </select>
+                        <div id="itemError" class="error-msg">請選擇合法的餐點編號</div>
+                    </div>
+
+                    <button type="submit">送出訂單</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 右側：結算報表 -->
+        <div>
+            <div class="card">
+                <h2>4. 結算報表</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>餐點名稱</th>
+                            <th>單價</th>
+                            <th>數量</th>
+                            <th>小計</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <!-- 動態載入統計報表 -->
+                    </tbody>
+                </table>
+                <div class="summary-info">
+                    <span id="totalCount">總訂餐筆數：0 筆</span>
+                    <span id="totalAmount">全班總金額：$0 元</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 內建 5 項菜單資料結構 (Array of Objects)
+    const menu = [
+        { id: 1, name: "排骨便當", price: 80 },
+        { id: 2, name: "雞腿便當", price: 85 },
+        { id: 3, name: "素食便當", price: 70 },
+        { id: 4, name: "滷肉飯", price: 55 },
+        { id: 5, name: "貢丸湯", price: 20 }
+    ];
+
+    // 初始化統計資料
+    let orderStats = menu.map(item => ({
+        ...item,
+        quantity: 0,
+        subtotal: 0
+    }));
+
+    let totalOrdersCount = 0;
+    let isFinished = false;
+
+    // 啟動時完整顯示菜單
+    function renderMenu() {
+        const menuListEl = document.getElementById('menuList');
+        menuListEl.innerHTML = menu.map(item => `
+            <li>
+                <span>${item.id}. ${item.name}</span>
+                <span>$${item.price}</span>
+            </li>
+        `).join('');
+    }
+
+    // 渲染結算報表
+    function renderReport() {
+        const tbody = document.getElementById('reportTableBody');
+        let grandTotal = 0;
+        let grandCount = 0;
+
+        tbody.innerHTML = orderStats.map(item => {
+            grandTotal += item.subtotal;
+            grandCount += item.quantity;
+            return `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>$${item.price}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.subtotal}</td>
+                </tr>
+            `;
+        }).join('');
+
+        document.getElementById('totalCount').innerText = `總訂餐筆數：${grandCount} 筆`;
+        document.getElementById('totalAmount').innerText = `全班總金額：$${grandTotal} 元`;
+    }
+
+    // 處理訂單送出
+    function handleOrder(event) {
+        event.preventDefault();
+
+        if (isFinished) {
+            alert("訂餐已結束（已輸入座號 0），如需重新開始請重新整理頁面。");
+            return;
+        }
+
+        const seatNoInput = document.getElementById('seatNo');
+        const itemNoInput = document.getElementById('itemNo');
+        const seatError = document.getElementById('seatError');
+        
+        // 隱藏舊錯誤訊息
+        seatError.style.display = 'none';
+
+        const seat = parseInt(seatNoInput.value, 10);
+        const itemId = parseInt(itemNoInput.value, 10);
+
+        // 檢查是否為結束指令 (座號 0)
+        if (seat === 0) {
+            isFinished = true;
+            seatNoInput.disabled = true;
+            itemNoInput.disabled = true;
+            document.querySelector("button[type='submit']").disabled = true;
+            document.querySelector("button[type='submit']").style.backgroundColor = "#94a3b8";
+            alert("已接收結束指令 (座號 0)，訂餐登記已完成。請參考右側結算報表！");
+            return;
+        }
+
+        // 輸入驗證：座號 1~50、餐點編號須在菜單範圍內 (1~5)
+        if (isNaN(seat) || seat < 1 || seat > 50) {
+            seatError.style.display = 'block';
+            seatNoInput.focus();
+            return;
+        }
+
+        const selectedItem = menu.find(i => i.id === itemId);
+        if (!selectedItem) {
+            alert("餐點編號不合法，請重新選擇！");
+            return;
+        }
+
+        // 更新統計數據
+        const statItem = orderStats.find(i => i.id === itemId);
+        if (statItem) {
+            statItem.quantity += 1;
+            statItem.subtotal = statItem.quantity * statItem.price;
+        }
+
+        // 重新整理報表顯示
+        renderReport();
+
+        // 清空輸入並聚焦回座號
+        seatNoInput.value = '';
+        itemNoInput.value = '';
+        seatNoInput.focus();
+    }
+
+    // 頁面載入完成後初始化
+    window.onload = function() {
+        renderMenu();
+        renderReport();
+    };
+</script>
+
+</body>
+</html>
